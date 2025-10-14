@@ -22,15 +22,25 @@ root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 # pu25 results
 df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
 df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
+# cortical thickness
 with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
     idp_ids_lh = f.read().splitlines()
 with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
     idp_ids_rh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
-    idp_ids_sc = f.read().splitlines()
-response_variables = idp_ids_lh + idp_ids_rh #+ idp_ids_sc
-response_variables = response_variables[:5]
+response_variables = idp_ids_lh + idp_ids_rh
 out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites')
+# subcortical volumes
+# with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
+#     idp_ids_sc = f.read().splitlines()
+# exclude = ['Left-vessel', 'Left-choroid-plexus',
+#            'Right-vessel', 'Right-choroid-plexus',
+#            'TotalGrayVol', 'SupraTentorialVolNotVent',
+#            'EstimatedTotalIntraCranialVol']
+# response_variables = idp_ids_sc
+# response_variables = [
+#     col for col in response_variables if col not in exclude
+#     ]
+# out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 
 # surface area
 #df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_tr.csv'), index_col=0) 
@@ -66,24 +76,24 @@ df['sub_id'] = df.index.astype(str)
 
 #%%  --------- plotting  ---------
 
-#generate plot 
-import seaborn as sns
-import matplotlib.pyplot as plt
+# #generate plot 
+# import seaborn as sns
+# import matplotlib.pyplot as plt
 
-fig, ax = plt.subplots(1, 2, figsize=(15, 5))
-sns.countplot(y="site", data=df, ax=ax[0], hue="sex", palette="Set2", legend=False)
-sns.scatterplot(
-    x="age",
-    y="lh_G&S_paracentral_thickness",
-    data=df,
-    ax=ax[1],
-    hue="sex",
-    palette="Set2",
-)
-ax[0].set_title("Site and sex distribution")
-ax[1].set_title("Age and paracentral thickness")
-plt.show()
-df.shape
+# fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+# sns.countplot(y="site", data=df, ax=ax[0], hue="sex", palette="Set2", legend=False)
+# sns.scatterplot(
+#     x="age",
+#     y="lh_G&S_paracentral_thickness",
+#     data=df,
+#     ax=ax[1],
+#     hue="sex",
+#     palette="Set2",
+# )
+# ax[0].set_title("Site and sex distribution")
+# ax[1].set_title("Age and paracentral thickness")
+# plt.show()
+# df.shape
 
 #%%  --------- configure norm data  ---------
 # set responses and covariates
@@ -91,9 +101,9 @@ covariates = ["age"]
 batch_effects = ["site", "sex"]
 
 # save site ids
-site_ids =  sorted(set(df_tr['site'].to_list()))
-with open(os.path.join(out_dir,'site_ids.txt'),'w') as f:
-    f.write('\n'.join(site_ids))
+#site_ids =  sorted(set(df_tr['site'].to_list()))
+#with open(os.path.join(out_dir,'site_ids.txt'),'w') as f:
+#    f.write('\n'.join(site_ids))
 
 # Remove variables with no variance
 response_variables = list(
@@ -115,12 +125,6 @@ reference_norm_data = ptk.NormData.from_dataframe(
 )
 
 #%% --------- configure model  ---------
-# configure train test split
-train, test = reference_norm_data.train_test_split(
-    splits=(0.5, 0.5), split_names=["train", "test"], random_state=42
-)
-print('train:', len(train.observations))
-print('test:', len(test.observations))
 
 # configure blr
 template_blr = ptk.BLR(
@@ -135,7 +139,7 @@ template_blr = ptk.BLR(
     ard=False,
 )
 
-# cofnigure normative model
+# configure normative model
 model = ptk.NormativeModel(
     template_regression_model=template_blr,
     savemodel=True,
@@ -147,123 +151,62 @@ model = ptk.NormativeModel(
     save_dir= out_dir,
 )
 
-#%% ---------- fit model  ---------
+# configure runner
+venv_path = os.path.join(os.path.dirname(os.path.dirname(sys.executable)))
+runner = ptk.Runner(
+    cross_validate=False,
+    parallelize=True, 
+    n_batches = len(reference_norm_data.response_vars), # can't just run one per batch otherwise throws an error
+    environment=venv_path,
+    job_type="slurm",  # or "torque" if you are on a torque cluster
+    time_limit="12:00:00",
+    memory = "2GB",
+    n_cores=1,
+    log_dir=os.path.join(out_dir,'logs/'),
+    temp_dir=os.path.join(out_dir,'tmp/'),
+    #preamble = "module load gcc/13.3.0; module load anaconda3" #have to add the gcc versionto avoid  an error between the toolkit requirements and default cluster gcc version
+)
+
+
+#%% ---------- fit and predict (single thread ---------
+
+# configure train test split
+train, test = reference_norm_data.train_test_split(
+    splits=(0.5, 0.5), split_names=["train", "test"], random_state=42
+)
+print('train:', len(train.observations))
+print('test:', len(test.observations))
+
+#%% ---------- fit and predict (single thread ---------
 
 model.fit_predict(train, test)
 
-#%% rest
+#%% ---------- fit model -------
 
-site_ids =  sorted(set(df_tr['site'].to_list()))
-with open(os.path.join(out_dir,'site_ids.txt'),'w') as f:
-    f.write('\n'.join(site_ids))
+model.fit(reference_norm_data)
 
-# load the idps to process
-with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
-    idp_ids_lh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
-    idp_ids_rh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
-    idp_ids_sc = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_sa_lh.txt')) as f:
-    idp_ids_sa_lh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_sa_rh.txt')) as f:
-    idp_ids_sa_rh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_lh.txt')) as f:
-    idp_ids_dk_lh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_rh.txt')) as f:
-    idp_ids_dk_rh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_mean.txt')) as f:
-    idp_ids_dk_mean = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_fa.txt')) as f:
-    idp_ids_fa = f.read().splitlines()
+#%% ---------- fit model (using multiple threads) -------
 
-#idp_ids = idp_ids_lh + idp_ids_rh + idp_ids_sc
-#idp_ids = idp_ids_dk_lh + idp_ids_dk_rh + idp_ids_dk_mean
-#idp_ids = idp_ids_sa_lh + idp_ids_sa_rh
-#idp_ids = idp_ids_sc
-idp_ids = idp_ids_fa
-#idp_ids = ['SubCortGrayVol']
-with open(os.path.join(out_dir,'idp_ids.txt'),'w') as f:
-    f.write('\n'.join(idp_ids))
+runner.fit(model, reference_norm_data, observe=False)
 
-outlier_thresh = 7
+#%% ---------- fit predict model (using multiple threads) -------
 
-warp =  'WarpSinArcsinh'   # 'WarpBoxCox', 'WarpSinArcsinh'  or None
+runner.fit_predict(model, train, test, observe=False)
 
-# limits for cubic B-spline basis 
-xmin = -5 # boundaries for ages of UKB participants +/- 5
-xmax = 110
+# #%% --------- plot ---------
+# plotdir = os.path.join(out_dir, "plots")
+# ptk.util.plotter.plot_centiles(
+#     model,
+#     #covariate="age",
+#     #covariate_range=[0, 90],
+#     batch_effects='all',
+#     hue_data= ('batch_effects', 'site'),
+#     scatter_data=test,
+#     #show_other_data=True,
+#     #harmonize_data=True,
+#     #style="site",
+#     #style_order=site_ids,
+#     #legend_out=True
+#     )
 
-################################### RUN #######################################
-
-for nummer, idp in enumerate(idp_ids): 
-    print('scanning',nummer,' IDP:', idp)
-
-    # configure and save the responses
-    y_tr = df_tr[idp].to_numpy() 
-    y_te = df_te[idp].to_numpy()
-    
-    # remove gross outliers
-    yz_tr = (y_tr - np.mean(y_tr)) / np.std(y_tr)
-    yz_te = (y_te - np.mean(y_te)) / np.std(y_te)
-    nz_tr_i = np.bitwise_and(np.abs(yz_tr) < outlier_thresh, y_tr > 0)
-    nz_te_i = np.bitwise_and(np.abs(yz_te) < outlier_thresh, y_te > 0) 
-    if nummer == 0: 
-        nz_tr = nz_tr_i
-        nz_te = nz_te_i
-    else:
-        nz_tr = np.bitwise_and(nz_tr, nz_tr_i)
-        nz_te = np.bitwise_and(nz_te, nz_te_i)
-  
-idp_dir = out_dir
-os.chdir(idp_dir)
-
-# configure and save response variables
-y_tr = df_tr[idp_ids].to_numpy()
-y_tr = y_tr[nz_tr,:]
-y_te = df_te[idp_ids].to_numpy()
-y_te = y_te[nz_te,:]
-
-resp_file_tr = os.path.join(idp_dir, 'resp_tr.pkl')
-resp_file_te = os.path.join(idp_dir, 'resp_te.pkl') 
-ptksave(y_tr, resp_file_tr)
-ptksave(y_te, resp_file_te)
-    
-# configure and save the covariates
-X_tr = create_design_matrix(df_tr[cols_cov].loc[nz_tr], 
-                            site_ids = df_tr['site'].loc[nz_tr],
-                            basis = 'bspline',
-                            xmin = xmin, 
-                            xmax = xmax)
-X_te = create_design_matrix(df_te[cols_cov].loc[nz_te], 
-                            site_ids = df_te['site'].loc[nz_te],
-                            all_sites=site_ids,
-                            basis = 'bspline', 
-                            xmin = xmin, 
-                            xmax = xmax)
-
-cov_file_tr = os.path.join(idp_dir, 'cov_bspline_tr.pkl')
-cov_file_te = os.path.join(idp_dir, 'cov_bspline_te.pkl')
-ptksave(X_tr, cov_file_tr)
-ptksave(X_te, cov_file_te)
-
-fit(cov_file_tr, 
-    resp_file_tr, 
-    alg='blr', 
-    optimizer = 'l-bfgs-b', 
-    savemodel='True',
-    warp=warp, 
-    warp_reparam=True) 
-
-# # Make prdictsion with test data
-# yhat_te, s2_te, Z = predict(cov_file_te, 
-#                             alg='blr', 
-#                             respfile=resp_file_te, 
-#                             model_path=os.path.join(idp_dir,'Models'), 
-#                             inputsuffix='_fit',
-#                             outputsuffix='_predict')
-
-    
-
-
-
+# %%
