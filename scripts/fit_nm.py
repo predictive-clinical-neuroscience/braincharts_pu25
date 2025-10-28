@@ -13,10 +13,8 @@ sns.set(style='whitegrid')
 #%% --------- load data --------------
 
 # load data
-#data_dir = '/project/3022054.01/projects/braincharts/data'
-#root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
-data_dir = '/Users/andmar/data/projects/braincharts/data/'
-root_dir = '/Users/andmar/data/projects/braincharts/braincharts_pu25'
+data_dir = '/project/3022054.01/projects/braincharts/data'
+root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 
 # # main results - elife 2022
 # df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_tr.csv'), index_col=0) 
