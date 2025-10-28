@@ -1,17 +1,22 @@
 #%% --------- imports  ---------
+import sys
 import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import pcntoolkit as ptk
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 sns.set(style='whitegrid')
 
 #%% --------- load data --------------
 
 # load data
-data_dir = '/project/3022054.01/projects/braincharts/data'
-root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
+#data_dir = '/project/3022054.01/projects/braincharts/data'
+#root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
+data_dir = '/Users/andmar/data/projects/braincharts/data/'
+root_dir = '/Users/andmar/data/projects/braincharts/braincharts_pu25'
 
 # # main results - elife 2022
 # df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_tr.csv'), index_col=0) 
@@ -74,37 +79,12 @@ df = pd.concat((df_tr, df_te))
 df['sex'] = df.apply(lambda x: {0: "F", 1: "M"}[x['sex']], axis=1)
 df['sub_id'] = df.index.astype(str)
 
-#%%  --------- plotting  ---------
 
-# #generate plot 
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-
-# fig, ax = plt.subplots(1, 2, figsize=(15, 5))
-# sns.countplot(y="site", data=df, ax=ax[0], hue="sex", palette="Set2", legend=False)
-# sns.scatterplot(
-#     x="age",
-#     y="lh_G&S_paracentral_thickness",
-#     data=df,
-#     ax=ax[1],
-#     hue="sex",
-#     palette="Set2",
-# )
-# ax[0].set_title("Site and sex distribution")
-# ax[1].set_title("Age and paracentral thickness")
-# plt.show()
-# df.shape
-
-#%%  --------- configure norm data  ---------
+#%%  --------- configure norm data and model ---------
 
 # set responses and covariates
 covariates = ["age"]
 batch_effects = ["site", "sex"]
-
-# save site ids
-#site_ids =  sorted(set(df_tr['site'].to_list()))
-#with open(os.path.join(out_dir,'site_ids.txt'),'w') as f:
-#    f.write('\n'.join(site_ids))
 
 # Remove variables with no variance
 response_variables = list(
@@ -124,8 +104,6 @@ reference_norm_data = ptk.NormData.from_dataframe(
     remove_outliers=True,
     z_threshold=10  
 )
-
-#%% --------- configure model  ---------
 
 # configure blr
 template_blr = ptk.BLR(
@@ -165,10 +143,10 @@ runner = ptk.Runner(
     n_cores=1,
     log_dir=os.path.join(out_dir,'logs/'),
     temp_dir=os.path.join(out_dir,'tmp/'),
-    #preamble = "module load gcc/13.3.0; module load anaconda3" #have to add the gcc versionto avoid  an error between the toolkit requirements and default cluster gcc version
+    #preamble = "module load gcc/13.3.0; module load anaconda3" 
 )
 
-#%% ---------- fit and predict (single thread ---------
+#%% ---------- configure train/test split ---------
 
 # configure train test split
 train, test = reference_norm_data.train_test_split(
@@ -181,32 +159,49 @@ print('test:', len(test.observations))
 
 model.fit_predict(train, test)
 
-#%% ---------- fit model -------
+#%% ---------- fit model (single thread) -------
 
 model.fit(reference_norm_data)
 
-#%% ---------- fit model (using multiple threads) -------
+#%% ---------- fit model (multiple threads) -------
 
 runner.fit(model, reference_norm_data, observe=False)
 
-#%% ---------- fit predict model (using multiple threads) -------
+#%% ---------- fit predict model (multiple threads) -------
 
 runner.fit_predict(model, train, test, observe=False)
+#%%  --------- plots  ---------
 
-# #%% --------- plot ---------
-# plotdir = os.path.join(out_dir, "plots")
-# ptk.util.plotter.plot_centiles(
-#     model,
-#     #covariate="age",
-#     #covariate_range=[0, 90],
-#     batch_effects='all',
-#     hue_data= ('batch_effects', 'site'),
-#     scatter_data=test,
-#     #show_other_data=True,
-#     #harmonize_data=True,
-#     #style="site",
-#     #style_order=site_ids,
-#     #legend_out=True
-#     )
+# plot data
+fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+sns.countplot(y="site", data=df, ax=ax[0], hue="sex", palette="Set2", legend=False)
+sns.scatterplot(
+    x="age",
+    y="lh_G&S_paracentral_thickness",
+    data=df,
+    ax=ax[1],
+    hue="sex",
+    palette="Set2",
+)
+ax[0].set_title("Site and sex distribution")
+ax[1].set_title("Age and paracentral thickness")
+plt.show()
+df.shape
 
-# %%
+#%%  --------- nicer centile plot  ---------
+# plot centiles
+plotdir = os.path.join(out_dir, "plots")
+ptk.util.plotter.plot_centiles(
+    model,
+    #covariate="age",
+    #covariate_range=[0, 90],
+    batch_effects='all',
+    hue_data= ('batch_effects', 'site'),
+    scatter_data=test,
+    #show_other_data=True,
+    #harmonize_data=True,
+    #style="site",
+    #style_order=site_ids,
+    #legend_out=True
+    )
+
