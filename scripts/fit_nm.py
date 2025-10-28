@@ -22,25 +22,25 @@ root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 # pu25 results
 df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
 df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
-# cortical thickness
-with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
-    idp_ids_lh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
-    idp_ids_rh = f.read().splitlines()
-response_variables = idp_ids_lh + idp_ids_rh
-out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites')
+# # cortical thickness
+# with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
+#     idp_ids_lh = f.read().splitlines()
+# with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
+#     idp_ids_rh = f.read().splitlines()
+# response_variables = idp_ids_lh + idp_ids_rh
+# out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites')
 # subcortical volumes
-# with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
-#     idp_ids_sc = f.read().splitlines()
-# exclude = ['Left-vessel', 'Left-choroid-plexus',
-#            'Right-vessel', 'Right-choroid-plexus',
-#            'TotalGrayVol', 'SupraTentorialVolNotVent',
-#            'EstimatedTotalIntraCranialVol']
-# response_variables = idp_ids_sc
-# response_variables = [
-#     col for col in response_variables if col not in exclude
-#     ]
-# out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
+with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
+    idp_ids_sc = f.read().splitlines()
+exclude = ['Left-vessel', 'Left-choroid-plexus',
+           'Right-vessel', 'Right-choroid-plexus',
+           'TotalGrayVol', 'SupraTentorialVolNotVent',
+           'EstimatedTotalIntraCranialVol']
+response_variables = idp_ids_sc
+response_variables = [
+    col for col in response_variables if col not in exclude
+    ]
+out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 
 # surface area
 #df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_tr.csv'), index_col=0) 
@@ -96,6 +96,7 @@ df['sub_id'] = df.index.astype(str)
 # df.shape
 
 #%%  --------- configure norm data  ---------
+
 # set responses and covariates
 covariates = ["age"]
 batch_effects = ["site", "sex"]
@@ -121,7 +122,7 @@ reference_norm_data = ptk.NormData.from_dataframe(
     subject_ids='sub_id',
     remove_Nan=True,
     remove_outliers=True,
-    z_threshold=10,  # The default here is 3, but we use 10 for demonstration purposes
+    z_threshold=10  
 )
 
 #%% --------- configure model  ---------
@@ -156,9 +157,9 @@ venv_path = os.path.join(os.path.dirname(os.path.dirname(sys.executable)))
 runner = ptk.Runner(
     cross_validate=False,
     parallelize=True, 
-    n_batches = len(reference_norm_data.response_vars), # can't just run one per batch otherwise throws an error
+    n_batches = len(reference_norm_data.response_vars), 
     environment=venv_path,
-    job_type="slurm",  # or "torque" if you are on a torque cluster
+    job_type="slurm", 
     time_limit="12:00:00",
     memory = "2GB",
     n_cores=1,
@@ -166,7 +167,6 @@ runner = ptk.Runner(
     temp_dir=os.path.join(out_dir,'tmp/'),
     #preamble = "module load gcc/13.3.0; module load anaconda3" #have to add the gcc versionto avoid  an error between the toolkit requirements and default cluster gcc version
 )
-
 
 #%% ---------- fit and predict (single thread ---------
 
