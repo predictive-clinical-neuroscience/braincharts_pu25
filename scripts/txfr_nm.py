@@ -13,7 +13,7 @@ out_dir = model_dir + '_txfr'
 os.makedirs(out_dir,exist_ok=True)
 
 model = ptk.NormativeModel.load(model_dir)
-batch_effects = ["site", "sex"]
+batch_effects = list(model.unique_batch_effects.keys()) #["site", "sex"]
 covariates = model.covariates #["age"]
 response_vars = model.response_vars
 
