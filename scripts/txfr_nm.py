@@ -6,7 +6,7 @@ import numpy as np
 # load data
 data_dir = '/project/3022054.01/projects/braincharts/data/'
 root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
-model_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
+model_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites')
 out_dir = model_dir + '_txfr'
 os.makedirs(out_dir,exist_ok=True)
 

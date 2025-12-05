@@ -52,10 +52,17 @@ out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 #df_te.dropna(inplace=True,how='any')
 #out_dir = os.path.join(root_dir,'models','surfacearea_20K_66sites_train_compact')
 
-# Desikan-Killiany atlas
-#df_tr = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_tr.csv'), index_col=0) 
-#df_te = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_te.csv'), index_col=0)
-#out_dir = os.path.join(root_dir,'models','lifespan_DK_46K_59sites_compact')
+# # Desikan-Killiany atlas
+# df_tr = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_tr.csv'), index_col=0) 
+# df_te = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_te.csv'), index_col=0)
+# with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_lh.txt')) as f:
+#     idp_ids_dk_lh = f.read().splitlines()
+# with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_rh.txt')) as f:
+#     idp_ids_dk_rh = f.read().splitlines()
+# with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_mean.txt')) as f:
+#     idp_ids_dk_mean = f.read().splitlines()
+# response_variables = idp_ids_dk_lh + idp_ids_dk_rh + idp_ids_dk_mean
+# out_dir = os.path.join(root_dir,'models','lifespan_ct_dk_46K_59sites')
 
 # diffusion (FA)
 # df_tr = pd.read_pickle(os.path.join(data_dir,'FA_clean_train.pkl')) 
@@ -134,6 +141,7 @@ runner = ptk.Runner(
     cross_validate=False,
     parallelize=True, 
     n_batches = len(reference_norm_data.response_vars), 
+
     environment=venv_path,
     job_type="slurm", 
     time_limit="12:00:00",
@@ -167,39 +175,5 @@ runner.fit(model, reference_norm_data, observe=False)
 
 #%% ---------- fit predict model (multiple threads) -------
 
-runner.fit_predict(model, train, test, observe=False)
-#%%  --------- plots  ---------
-
-# plot data
-fig, ax = plt.subplots(1, 2, figsize=(15, 5))
-sns.countplot(y="site", data=df, ax=ax[0], hue="sex", palette="Set2", legend=False)
-sns.scatterplot(
-    x="age",
-    y="lh_G&S_paracentral_thickness",
-    data=df,
-    ax=ax[1],
-    hue="sex",
-    palette="Set2",
-)
-ax[0].set_title("Site and sex distribution")
-ax[1].set_title("Age and paracentral thickness")
-plt.show()
-df.shape
-
-#%%  --------- nicer centile plot  ---------
-# plot centiles
-plotdir = os.path.join(out_dir, "plots")
-ptk.util.plotter.plot_centiles(
-    model,
-    #covariate="age",
-    #covariate_range=[0, 90],
-    batch_effects='all',
-    hue_data= ('batch_effects', 'site'),
-    scatter_data=test,
-    #show_other_data=True,
-    #harmonize_data=True,
-    #style="site",
-    #style_order=site_ids,
-    #legend_out=True
-    )
+runner.fit_predict(model, train, train, observe=False)
 
