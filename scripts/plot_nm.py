@@ -2,6 +2,8 @@
 import os
 import pandas as pd
 import pcntoolkit as ptk
+import numpy as np
+
 
 data_dir = '/project/3022054.01/projects/braincharts/data'
 root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
@@ -18,6 +20,8 @@ df = pd.concat((df_tr, df_te))
 
 df['sex'] = df.apply(lambda x: {0: "F", 1: "M"}[x['sex']], axis=1)
 df['sub_id'] = df.index.astype(str)
+
+df['log-WM-hypointensities'] = np.log1p(df['WM-hypointensities'])
 
 # load model 
 model = ptk.NormativeModel.load(out_dir)
@@ -39,7 +43,7 @@ reference_norm_data = ptk.NormData.from_dataframe(
     z_threshold=10  
 )
 
-#%%  --------- nicer centile plot  ---------
+#%%  --------- basic centile plot  ---------
 
 # plot centiles
 plotdir = os.path.join(out_dir, "plots")
@@ -60,3 +64,18 @@ ptk.util.plotter.plot_centiles(
 
 # %%
 
+# plot centiles
+plotdir = os.path.join(out_dir, "plots")
+ptk.util.plotter.plot_centiles_advanced(
+    model,
+    #covariate="age",
+    #covariate_range=[0, 90],
+    #batch_effects='all',
+    #hue_data= ('batch_effects', 'site'),
+    scatter_data=reference_norm_data,
+    #show_other_data=True,
+    #harmonize_data=True,
+    #style="site",
+    #style_order=site_ids,
+    #legend_out=True
+    )

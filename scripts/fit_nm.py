@@ -23,6 +23,7 @@ root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 # out_dir = os.path.join(root_dir,'models','lifespan_59K_82sites')
 
 # pu25 results
+
 df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
 df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
 # cortical thickness
@@ -43,7 +44,7 @@ response_variables = idp_ids_sc
 response_variables = [
     col for col in response_variables if col not in exclude
     ]
-response_variables = response_variables + ['Left-WM-hypointensities', 'Right-WM-hypointensities']
+response_variables = response_variables + ['WM-hypointensities', 'log-WM-hypointensities']
 out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 
 # surface area
@@ -88,6 +89,8 @@ df = pd.concat((df_tr, df_te))
 df['sex'] = df.apply(lambda x: {0: "F", 1: "M"}[x['sex']], axis=1)
 df['sub_id'] = df.index.astype(str)
 
+# add in extra variable
+df['log-WM-hypointensities'] = np.log1p(df['WM-hypointensities'])
 
 #%%  --------- configure norm data and model ---------
 
