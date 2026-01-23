@@ -25,13 +25,13 @@ root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 # pu25 results
 df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
 df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
-# # cortical thickness
+# cortical thickness
 # with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
 #     idp_ids_lh = f.read().splitlines()
 # with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
 #     idp_ids_rh = f.read().splitlines()
 # response_variables = idp_ids_lh + idp_ids_rh
-# out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites')
+# out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites_train')
 # subcortical volumes
 with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
     idp_ids_sc = f.read().splitlines()
@@ -43,6 +43,7 @@ response_variables = idp_ids_sc
 response_variables = [
     col for col in response_variables if col not in exclude
     ]
+response_variables = response_variables + ['Left-WM-hypointensities', 'Right-WM-hypointensities']
 out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 
 # surface area
@@ -64,10 +65,9 @@ out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 # response_variables = idp_ids_dk_lh + idp_ids_dk_rh + idp_ids_dk_mean
 # out_dir = os.path.join(root_dir,'models','lifespan_ct_dk_46K_59sites')
 
-# diffusion (FA)
+# # diffusion (FA)
 # df_tr = pd.read_pickle(os.path.join(data_dir,'FA_clean_train.pkl')) 
 # df_te = pd.read_pickle(os.path.join(data_dir,'FA_clean_test.pkl'))
-# out_dir = os.path.join(root_dir,'models','lifespan_FA_24K_19sites_train_compact')
 # # fix some coding errors
 # df_tr.columns = df_tr.columns.str.replace(" - ", "-")
 # df_tr.columns = df_tr.columns.str.replace(" ", "_")
@@ -77,6 +77,10 @@ out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 # df_tr = df_tr.loc[df_tr['site'] != 'DHCP_Evelina']
 # df_tr['age'] = pd.to_numeric(df_tr['age'])
 # df_te['age'] = pd.to_numeric(df_te['age'])
+# with open(os.path.join(root_dir,'docs','phenotypes_fa.txt')) as f:
+#     idp_ids_fa = f.read().splitlines()
+# reponse_variables = idp_ids_fa 
+# out_dir = os.path.join(root_dir,'models','lifespan_FA_24K_19sites_train')
 
 os.makedirs(os.path.join(out_dir), exist_ok=True)
 
@@ -176,4 +180,3 @@ runner.fit(model, reference_norm_data, observe=False)
 #%% ---------- fit predict model (multiple threads) -------
 
 runner.fit_predict(model, train, train, observe=False)
-
