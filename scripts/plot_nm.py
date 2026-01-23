@@ -4,9 +4,12 @@ import pandas as pd
 import pcntoolkit as ptk
 import numpy as np
 
+from extra_plot_utils import plot_centiles_log
 
-data_dir = '/project/3022054.01/projects/braincharts/data'
-root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
+top_dir = '/Users/andmar/data/projects/braincharts'
+#top_dir = '/project/3022054.01/projects/braincharts'
+data_dir = os.path.join(top_dir,'data/')
+root_dir = os.path.join(top_dir,'braincharts_pu25')
 
 #%%  --------- load data  ---------
 
@@ -47,35 +50,28 @@ reference_norm_data = ptk.NormData.from_dataframe(
 
 # plot centiles
 plotdir = os.path.join(out_dir, "plots")
-ptk.util.plotter.plot_centiles(
+#ptk.util.plotter.plot_centiles(
+plot_centiles_log(
     model,
-    #covariate="age",
-    #covariate_range=[0, 90],
-    #batch_effects='all',
-    #hue_data= ('batch_effects', 'site'),
     scatter_data=reference_norm_data,
-    #show_other_data=True,
-    #harmonize_data=True,
-    #style="site",
-    #style_order=site_ids,
-    #legend_out=True
+    log_transform=True,
     )
 
 
 # %%
 
-# plot centiles
-plotdir = os.path.join(out_dir, "plots")
-ptk.util.plotter.plot_centiles_advanced(
-    model,
-    #covariate="age",
-    #covariate_range=[0, 90],
-    #batch_effects='all',
-    #hue_data= ('batch_effects', 'site'),
-    scatter_data=reference_norm_data,
-    #show_other_data=True,
-    #harmonize_data=True,
-    #style="site",
-    #style_order=site_ids,
-    #legend_out=True
-    )
+# # plot centiles
+# plotdir = os.path.join(out_dir, "plots")
+# ptk.util.plotter.plot_centiles_advanced(
+#     model,
+#     #covariate="age",
+#     #covariate_range=[0, 90],
+#     #batch_effects='all',
+#     #hue_data= ('batch_effects', 'site'),
+#     scatter_data=reference_norm_data,
+#     #show_other_data=True,
+#     #harmonize_data=True,
+#     #style="site",
+#     #style_order=site_ids,
+#     #legend_out=True
+#     )

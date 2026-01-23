@@ -4,8 +4,11 @@ import pandas as pd
 import numpy as np
 
 # load data
-data_dir = '/project/3022054.01/projects/braincharts/data/'
-root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
+top_dir = '/Users/andmar/data/projects/braincharts'
+#top_dir = '/project/3022054.01/projects/braincharts'
+data_dir = os.path.join(top_dir,'data/')
+root_dir = os.path.join(top_dir,'braincharts_pu25')
+
 model_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites')
 out_dir = model_dir + '_txfr'
 os.makedirs(out_dir,exist_ok=True)
