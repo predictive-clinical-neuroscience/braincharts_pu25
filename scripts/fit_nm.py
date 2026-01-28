@@ -22,18 +22,22 @@ root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 # #df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_patients_te.csv'), index_col=0)
 # out_dir = os.path.join(root_dir,'models','lifespan_59K_82sites')
 
-# pu25 results
-
-df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
-df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
-# cortical thickness
+# # pu25 results: cortical thickness (Destrieux atlas)
+# df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
+# df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
 # with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
 #     idp_ids_lh = f.read().splitlines()
 # with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
 #     idp_ids_rh = f.read().splitlines()
 # response_variables = idp_ids_lh + idp_ids_rh
 # out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites_train')
-# subcortical volumes
+
+# pu25 results: subcortical volumes
+df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
+df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
+# add log transformed WM-hypointensities
+df_tr['log-WM-hypointensities'] = np.log1p(df_tr['WM-hypointensities'])
+df_te['log-WM-hypointensities'] = np.log1p(df_te['WM-hypointensities'])
 with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
     idp_ids_sc = f.read().splitlines()
 exclude = ['Left-vessel', 'Left-choroid-plexus',
@@ -83,14 +87,14 @@ out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 # reponse_variables = idp_ids_fa 
 # out_dir = os.path.join(root_dir,'models','lifespan_FA_24K_19sites_train')
 
-os.makedirs(os.path.join(out_dir), exist_ok=True)
-
+# concatenate (split later using ptk routines)
 df = pd.concat((df_tr, df_te))
+
+# recode sex and add subject id
 df['sex'] = df.apply(lambda x: {0: "F", 1: "M"}[x['sex']], axis=1)
 df['sub_id'] = df.index.astype(str)
 
-# add in extra variable
-df['log-WM-hypointensities'] = np.log1p(df['WM-hypointensities'])
+os.makedirs(os.path.join(out_dir), exist_ok=True)
 
 #%%  --------- configure norm data and model ---------
 

@@ -23,13 +23,15 @@ data_ad_path = os.path.join(data_dir, 'pcnportal_test_data','OpenNeuroTransfer_c
 data_te_path = os.path.join(data_dir, 'pcnportal_test_data','OpenNeuroTransfer_ct_te.csv')
 df_ad = pd.read_csv(data_ad_path, index_col=0)
 df_te = pd.read_csv(data_te_path, index_col=0)
+
 # combine (we split again later)
 df = pd.concat([df_ad, df_te], axis=0)
 
-# adjust the coding of sex and add a subject id column
+# adjust sex coding and add a subject id column
 df['sex'] = df.apply(lambda x: {0: "F", 1: "M"}[x['sex']], axis=1)
 df['sub_id'] = df.index.astype(str)
 
+# configure norm data object
 norm_data = ptk.NormData.from_dataframe(
     name="pu25_thickness_txfr", 
     dataframe=df,
