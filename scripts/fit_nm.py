@@ -32,31 +32,36 @@ root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
 # response_variables = idp_ids_lh + idp_ids_rh
 # out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites_train')
 
-# pu25 results: subcortical volumes
-df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
-df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
-# add log transformed WM-hypointensities
-df_tr['log-WM-hypointensities'] = np.log1p(df_tr['WM-hypointensities'])
-df_te['log-WM-hypointensities'] = np.log1p(df_te['WM-hypointensities'])
-with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
-    idp_ids_sc = f.read().splitlines()
-exclude = ['Left-vessel', 'Left-choroid-plexus',
-           'Right-vessel', 'Right-choroid-plexus',
-           'TotalGrayVol', 'SupraTentorialVolNotVent',
-           'EstimatedTotalIntraCranialVol']
-response_variables = idp_ids_sc
-response_variables = [
-    col for col in response_variables if col not in exclude
-    ]
-response_variables = response_variables + ['WM-hypointensities', 'log-WM-hypointensities']
-out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
+# # pu25 results: subcortical volumes
+# df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
+# df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
+# # add log transformed WM-hypointensities
+# df_tr['log-WM-hypointensities'] = np.log1p(df_tr['WM-hypointensities'])
+# df_te['log-WM-hypointensities'] = np.log1p(df_te['WM-hypointensities'])
+# with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
+#     idp_ids_sc = f.read().splitlines()
+# exclude = ['Left-vessel', 'Left-choroid-plexus',
+#            'Right-vessel', 'Right-choroid-plexus',
+#            'TotalGrayVol', 'SupraTentorialVolNotVent',
+#            'EstimatedTotalIntraCranialVol']
+# response_variables = idp_ids_sc
+# response_variables = [
+#     col for col in response_variables if col not in exclude
+#     ]
+# response_variables = response_variables + ['WM-hypointensities', 'log-WM-hypointensities']
+# out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 
 # surface area
-#df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_tr.csv'), index_col=0) 
-#df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_te.csv'), index_col=0)
-#df_tr.dropna(inplace=True,how='any')
-#df_te.dropna(inplace=True,how='any')
-#out_dir = os.path.join(root_dir,'models','surfacearea_20K_66sites_train_compact')
+df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_tr.csv'), index_col=0) 
+df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_te.csv'), index_col=0)
+df_tr.dropna(inplace=True,how='any')
+df_te.dropna(inplace=True,how='any')
+with open(os.path.join(root_dir,'docs','phenotypes_sa_lh.txt')) as f:
+    idp_ids_sa_lh = f.read().splitlines()
+with open(os.path.join(root_dir,'docs','phenotypes_sa_rh.txt')) as f:
+    idp_ids_sa_rh = f.read().splitlines()
+response_variables = idp_ids_sa_lh + idp_ids_sa_rh
+out_dir = os.path.join(root_dir,'models','lifespan_sa_20K_66sites')
 
 # # Desikan-Killiany atlas
 # df_tr = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_tr.csv'), index_col=0) 
@@ -84,8 +89,8 @@ out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
 # df_te['age'] = pd.to_numeric(df_te['age'])
 # with open(os.path.join(root_dir,'docs','phenotypes_fa.txt')) as f:
 #     idp_ids_fa = f.read().splitlines()
-# reponse_variables = idp_ids_fa 
-# out_dir = os.path.join(root_dir,'models','lifespan_FA_24K_19sites_train')
+# response_variables = idp_ids_fa 
+# out_dir = os.path.join(root_dir,'models','lifespan_FA_24K_19sites')
 
 # concatenate (split later using ptk routines)
 df = pd.concat((df_tr, df_te))
