@@ -16,7 +16,7 @@ sns.set(style='whitegrid')
 
 #%% --------- load data --------------
 root = Path(__file__).resolve().parents[2]
-print('top level dir:', top_level_dir)
+print('top level dir:', root)
 
 # modaltity: 'ct', 'sc', 'sa', 'fa'
 # variant for 'ct': None, 'DK'
