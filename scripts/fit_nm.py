@@ -8,97 +8,19 @@ import pcntoolkit as ptk
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from pathlib import Path
+
+from data_utils import load_data
+
 sns.set(style='whitegrid')
 
 #%% --------- load data --------------
+top_level_dir = Path(__file__).resolve().parents[2]
+print('top level dir:', top_level_dir)
 
-# load data
-data_dir = '/project/3022054.01/projects/braincharts/data'
-root_dir = '/project/3022054.01/projects/braincharts/braincharts_pu25'
-
-# # main results - elife 2022
-# df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_tr.csv'), index_col=0) 
-# df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_te.csv'), index_col=0)
-# #df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_patients_te.csv'), index_col=0)
-# out_dir = os.path.join(root_dir,'models','lifespan_59K_82sites')
-
-# # pu25 results: cortical thickness (Destrieux atlas)
-# df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
-# df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
-# with open(os.path.join(root_dir,'docs','phenotypes_ct_lh.txt')) as f:
-#     idp_ids_lh = f.read().splitlines()
-# with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
-#     idp_ids_rh = f.read().splitlines()
-# response_variables = idp_ids_lh + idp_ids_rh
-# out_dir = os.path.join(root_dir,'models','lifespan_ct_67K_89sites_train')
-
-# # pu25 results: subcortical volumes
-# df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_tr.csv'), index_col=0) 
-# df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_controls_extended_te.csv'), index_col=0)
-# # add log transformed WM-hypointensities
-# df_tr['log-WM-hypointensities'] = np.log1p(df_tr['WM-hypointensities'])
-# df_te['log-WM-hypointensities'] = np.log1p(df_te['WM-hypointensities'])
-# with open(os.path.join(root_dir,'docs','phenotypes_sc.txt')) as f:
-#     idp_ids_sc = f.read().splitlines()
-# exclude = ['Left-vessel', 'Left-choroid-plexus',
-#            'Right-vessel', 'Right-choroid-plexus',
-#            'TotalGrayVol', 'SupraTentorialVolNotVent',
-#            'EstimatedTotalIntraCranialVol']
-# response_variables = idp_ids_sc
-# response_variables = [
-#     col for col in response_variables if col not in exclude
-#     ]
-# response_variables = response_variables + ['WM-hypointensities', 'log-WM-hypointensities']
-# out_dir = os.path.join(root_dir,'models','lifespan_sc_67K_89sites')
-
-# surface area
-df_tr = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_tr.csv'), index_col=0) 
-df_te = pd.read_csv(os.path.join(data_dir,'lifespan_big_surfacearea_resample_0_te.csv'), index_col=0)
-df_tr.dropna(inplace=True,how='any')
-df_te.dropna(inplace=True,how='any')
-with open(os.path.join(root_dir,'docs','phenotypes_sa_lh.txt')) as f:
-    idp_ids_sa_lh = f.read().splitlines()
-with open(os.path.join(root_dir,'docs','phenotypes_sa_rh.txt')) as f:
-    idp_ids_sa_rh = f.read().splitlines()
-response_variables = idp_ids_sa_lh + idp_ids_sa_rh
-out_dir = os.path.join(root_dir,'models','lifespan_sa_20K_66sites')
-
-# # Desikan-Killiany atlas
-# df_tr = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_tr.csv'), index_col=0) 
-# df_te = pd.read_csv(os.path.join(data_dir,'DK_lifespan_big_ct_te.csv'), index_col=0)
-# with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_lh.txt')) as f:
-#     idp_ids_dk_lh = f.read().splitlines()
-# with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_rh.txt')) as f:
-#     idp_ids_dk_rh = f.read().splitlines()
-# with open(os.path.join(root_dir,'docs','phenotypes_ct_dk_mean.txt')) as f:
-#     idp_ids_dk_mean = f.read().splitlines()
-# response_variables = idp_ids_dk_lh + idp_ids_dk_rh + idp_ids_dk_mean
-# out_dir = os.path.join(root_dir,'models','lifespan_ct_dk_46K_59sites')
-
-# # diffusion (FA)
-# df_tr = pd.read_pickle(os.path.join(data_dir,'FA_clean_train.pkl')) 
-# df_te = pd.read_pickle(os.path.join(data_dir,'FA_clean_test.pkl'))
-# # fix some coding errors
-# df_tr.columns = df_tr.columns.str.replace(" - ", "-")
-# df_tr.columns = df_tr.columns.str.replace(" ", "_")
-# df_te.columns = df_te.columns.str.replace(" - ", "-")
-# df_te.columns = df_te.columns.str.replace(" ", "_")
-# df_te = df_te.loc[df_te['site'] != 'DHCP_Evelina']
-# df_tr = df_tr.loc[df_tr['site'] != 'DHCP_Evelina']
-# df_tr['age'] = pd.to_numeric(df_tr['age'])
-# df_te['age'] = pd.to_numeric(df_te['age'])
-# with open(os.path.join(root_dir,'docs','phenotypes_fa.txt')) as f:
-#     idp_ids_fa = f.read().splitlines()
-# response_variables = idp_ids_fa 
-# out_dir = os.path.join(root_dir,'models','lifespan_FA_24K_19sites')
-
-# concatenate (split later using ptk routines)
-df = pd.concat((df_tr, df_te))
-
-# recode sex and add subject id
-df['sex'] = df.apply(lambda x: {0: "F", 1: "M"}[x['sex']], axis=1)
-df['sub_id'] = df.index.astype(str)
-
+# modaltity: 'ct', 'sc', 'sa', 'fa'
+# variant for 'ct': None, 'DK'
+df, response_variables, out_dir = load_data(modality='ct', variant=None, top_level_dir = top_level_dir)
 os.makedirs(os.path.join(out_dir), exist_ok=True)
 
 #%%  --------- configure norm data and model ---------

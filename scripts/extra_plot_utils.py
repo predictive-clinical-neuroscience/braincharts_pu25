@@ -193,12 +193,6 @@ def _plot_centiles_log(
         df = df[columns]
         df.columns = [c[1] for c in df.columns]
         df[response_var]
-        # sns.scatterplot(
-        #     data=df,
-        #     x=covariate,
-        #     y=response_var,
-        #     **scatter_kwargs
-        # )
         xvec = df[covariate].to_numpy()
         yvec = df[response_var].to_numpy()
         if log_transform:
