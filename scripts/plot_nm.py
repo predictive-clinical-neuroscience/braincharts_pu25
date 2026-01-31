@@ -4,7 +4,7 @@ import pandas as pd
 import pcntoolkit as ptk
 import numpy as np
 
-from extra_plot_utils import plot_centiles_log
+from plot_utils import plot_centiles_log
 
 #top_level_dir = '/project/3022054.01/projects/braincharts'
 top_level_dir = '/Users/andmar/data/projects/braincharts'
@@ -60,9 +60,8 @@ ptk.util.plotter.plot_centiles(
 
 #%%  --------- basic centile plot  ---------
 
-# plot centiles
-# plotdir = os.path.join(out_dir, "plots")
 # plot data that has been log transformed
+# plotdir = os.path.join(out_dir, "plots")
 # plot_centiles_log(
 #     model,
 #     scatter_data=reference_norm_data,

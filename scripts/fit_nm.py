@@ -15,12 +15,14 @@ from data_utils import load_data
 sns.set(style='whitegrid')
 
 #%% --------- load data --------------
-top_level_dir = Path(__file__).resolve().parents[2]
+root = Path(__file__).resolve().parents[2]
 print('top level dir:', top_level_dir)
 
 # modaltity: 'ct', 'sc', 'sa', 'fa'
 # variant for 'ct': None, 'DK'
-df, response_variables, out_dir = load_data(modality='ct', variant=None, top_level_dir = top_level_dir)
+df, response_variables, out_dir = load_data(modality='fa', 
+                                            variant=None, 
+                                            top_level_dir = root)
 os.makedirs(os.path.join(out_dir), exist_ok=True)
 
 #%%  --------- configure norm data and model ---------
