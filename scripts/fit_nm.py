@@ -18,13 +18,24 @@ sns.set(style='whitegrid')
 root = Path(__file__).resolve().parents[2]
 print('top level dir:', root)
 
-# modaltity: 'ct', 'sc', 'sa', 'fa'
-# variant for 'ct': None, 'DK'
+modality = 'sa' # 'ct', 'sc', 'sa', 'fa', 'fc'
+variant = None # for ct and sa : None, 'DK' - otherwise unused
+model_type = 'HBR_Sb' #BLRw or HBR_Sb
+
 df, response_variables, out_dir = load_data(modality='fa', 
                                             variant=None, 
                                             top_level_dir = root)
 os.makedirs(os.path.join(out_dir), exist_ok=True)
 
+if modality == 'sa'and variant==None: #if Destrieux SA
+    df = df[(df == 0).sum(axis=1) < 25] #temporary - drop ukb subjects with freesurfer processing issue for Destrieux
+
+if modality == 'sa' :
+    name = 'surfacearea'
+    splits=(0.5, 0.5)
+elif modality == 'fc': #less subjects so change split
+    name = 'connectomes'
+    splits=(0.8, 0.2)
 #%%  --------- configure norm data and model ---------
 
 # set responses and covariates
@@ -39,7 +50,7 @@ print(response_variables)
 
 # configure norm data object
 reference_norm_data = ptk.NormData.from_dataframe(
-    name="pu25_thickness",
+    name="pu25_"+ name,
     dataframe=df,
     covariates=covariates,
     batch_effects=batch_effects,
@@ -62,10 +73,57 @@ template_blr = ptk.BLR(
     optimizer="powell",
     ard=False,
 )
+# configure HBR - parameters taken from JMM Bayer's HBR SHASH notebook
+mu = ptk.make_prior(
+    linear=True,
+    slope=ptk.make_prior(dist_name="Normal", dist_params=(0.0, 10.0)),
+    intercept=ptk.make_prior(
+        random=True,
+        mu=ptk.make_prior(dist_name="Normal", dist_params=(0.0, 1.0)),
+        sigma=ptk.make_prior(dist_name="Normal", dist_params=(0.0, 1.0), mapping="softplus", mapping_params=(0.0, 3.0)),
+    ),
+    basis_function=ptk.BsplineBasisFunction(basis_column=0, nknots=5, degree=3),
+)
+sigma = ptk.make_prior(
+    linear=True,
+    slope=ptk.make_prior(dist_name="Normal", dist_params=(0.0, 2.0)),
+    intercept=ptk.make_prior(dist_name="Normal", dist_params=(1.0, 1.0)),
+    basis_function=ptk.BsplineBasisFunction(basis_column=0, nknots=5, degree=3),
+    mapping="softplus",
+    mapping_params=(0.0, 3.0),
+)
+
+epsilon = ptk.make_prior(
+    dist_name="Normal",
+    dist_params=(0.0, 1.0),
+)
+
+delta = ptk.make_prior(
+    dist_name="Normal",
+    dist_params=(1.0, 1.0),
+    mapping="softplus",
+    mapping_params=(0.0,3.0,0.6),
+)
+
+template_hbr = ptk.HBR(
+    name="template",
+    cores=16,
+    progressbar=True,
+    draws=1500,
+    tune=500,
+    chains=4,
+    nuts_sampler="nutpie",
+    likelihood=ptk.SHASHbLikelihood(mu, sigma, epsilon, delta),
+)
 
 # configure normative model
+if model_type == 'BLRw':
+    template_model = template_blr
+elif model_type == 'HBR_Sb':
+    template_model = template_hbr
+    
 model = ptk.NormativeModel(
-    template_regression_model=template_blr,
+    template_regression_model=template_model,
     savemodel=True,
     evaluate_model=True,
     saveresults=True,
@@ -84,8 +142,8 @@ runner = ptk.Runner(
 
     environment=venv_path,
     job_type="slurm", 
-    time_limit="12:00:00",
-    memory = "2GB",
+    time_limit="12:00:00", #need 24h for HBR
+    memory = "2GB", #need 50 to 55GB for full reference_normdata HBR Sb
     n_cores=1,
     log_dir=os.path.join(out_dir,'logs/'),
     temp_dir=os.path.join(out_dir,'tmp/'),
@@ -96,7 +154,7 @@ runner = ptk.Runner(
 
 # configure train test split
 train, test = reference_norm_data.train_test_split(
-    splits=(0.5, 0.5), split_names=["train", "test"], random_state=42
+    splits=splits, split_names=["train", "test"], random_state=42
 )
 print('train:', len(train.observations))
 print('test:', len(test.observations))
@@ -115,4 +173,4 @@ runner.fit(model, reference_norm_data, observe=False)
 
 #%% ---------- fit predict model (multiple threads) -------
 
-runner.fit_predict(model, train, train, observe=False)
+runner.fit_predict(model, train, test, observe=False)
