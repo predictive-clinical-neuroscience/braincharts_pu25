@@ -18,25 +18,30 @@ sns.set(style='whitegrid')
 root = Path(__file__).resolve().parents[2]
 print('top level dir:', root)
 
-modality = 'sa' # 'ct', 'sc', 'sa', 'fa', 'fc'
+modality = 'ct' # 'ct', 'sc', 'sa', 'fa', 'fc'
 variant = None # for ct and sa : None, 'DK' - otherwise unused
-model_type = 'HBR_Sb' #BLRw or HBR_Sb
+model_type = 'BLRw' #BLRw or HBR_Sb
 
-df, response_variables, out_dir = load_data(modality='fa', 
-                                            variant=None, 
+df, response_variables, out_dir = load_data(modality=modality, 
+                                            variant=variant,
+                                            model_type=model_type,
                                             top_level_dir = root)
 os.makedirs(os.path.join(out_dir), exist_ok=True)
 
 if modality == 'sa'and variant==None: #if Destrieux SA
     df = df[(df == 0).sum(axis=1) < 25] #temporary - drop ukb subjects with freesurfer processing issue for Destrieux
 
-if modality == 'sa' :
-    name = 'surfacearea'
-    splits=(0.5, 0.5)
-elif modality == 'fc': #less subjects so change split
-    name = 'connectomes'
+# if modality == 'sa' :
+#     name = 'surfacearea'
+#     splits=(0.5, 0.5)
+# elif modality == 'fc': #less subjects so change split
+#     name = 'connectomes'
+#     splits=(0.8, 0.2)
+if modality == 'fc':
     splits=(0.8, 0.2)
-#%%  --------- configure norm data and model ---------
+else:
+    splits=(0.5, 0.5)
+#%%  --------- configure norm data ---------
 
 # set responses and covariates
 covariates = ["age"]
@@ -50,7 +55,7 @@ print(response_variables)
 
 # configure norm data object
 reference_norm_data = ptk.NormData.from_dataframe(
-    name="pu25_"+ name,
+    name="pu25_"+ modality,
     dataframe=df,
     covariates=covariates,
     batch_effects=batch_effects,
@@ -60,7 +65,7 @@ reference_norm_data = ptk.NormData.from_dataframe(
     remove_outliers=True,
     z_threshold=10  
 )
-
+#%%  --------- configure model ---------
 # configure blr
 template_blr = ptk.BLR(
     name="template",
@@ -73,6 +78,7 @@ template_blr = ptk.BLR(
     optimizer="powell",
     ard=False,
 )
+
 # configure HBR - parameters taken from JMM Bayer's HBR SHASH notebook
 mu = ptk.make_prior(
     linear=True,

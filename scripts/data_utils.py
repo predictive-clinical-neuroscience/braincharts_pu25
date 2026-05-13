@@ -43,7 +43,7 @@ def load_data(modality='ct', variant=None, model_type=None, top_level_dir=None):
             with open(os.path.join(root_dir,'docs','phenotypes_ct_rh.txt')) as f:
                 idp_ids_rh = f.read().splitlines()
             response_variables = idp_ids_lh + idp_ids_rh
-            out_dir = os.path.join(root_dir,'models', model_type + '_lifespan_ct_67K_89sites_train')
+            out_dir = os.path.join(root_dir,'models', model_type + '_lifespan_ct_67K_89sites')
 
     # subcortical volumes (pu25 results)
     elif modality.lower() == 'sc':
@@ -65,7 +65,7 @@ def load_data(modality='ct', variant=None, model_type=None, top_level_dir=None):
         response_variables = response_variables + ['WM-hypointensities', 'log-WM-hypointensities']
         out_dir = os.path.join(root_dir,'models', model_type + '_lifespan_sc_67K_89sites')
 
-   elif modality.lower() == 'sa':
+    elif modality.lower() == 'sa':
         # surface area
         if variant and variant.upper() == 'DK':
             # Desikan-Killiany atlas
